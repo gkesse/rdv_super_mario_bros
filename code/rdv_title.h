@@ -6,6 +6,7 @@ class rdv_view;
 class rdv_pixmap_item;
 class rdv_title;
 class rdv_sound_manager;
+class rdv_user_registration;
 
 class rdv_pixmap_item : public QObject, public QGraphicsPixmapItem
 {
@@ -26,7 +27,7 @@ private slots:
      void developerLogin();
      void quitProgram();
      void newUser();
-     void on_radioButton_toggled(bool checked);
+     void on_radioButton_toggled([[maybe_unused]] bool checked);
 
 signals:
     void playSound(QString);
@@ -51,4 +52,6 @@ private:
 	QRadioButton *radioButton;
 	QLabel *radioText;
 	rdv_sound_manager *soundManager;
+
+    rdv_user_registration *loginWindow;
 };

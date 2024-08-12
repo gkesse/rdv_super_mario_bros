@@ -4,3 +4,4 @@
 /mingw/Makefile.Release
 /mingw/bin/
 /mingw/build/
+/**/*.bak

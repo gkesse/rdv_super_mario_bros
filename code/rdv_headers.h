@@ -24,3 +24,7 @@
 #include <QAudioOutput>
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QSqlQuery>
+#include <QSqlRecord>
+#include <QVector>
+#include <QRegularExpression>

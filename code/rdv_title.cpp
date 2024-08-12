@@ -2,6 +2,7 @@
 #include "rdv_view.h"
 #include "rdv_sound_manager.h"
 #include "rdv_game_dao.h"
+#include "rdv_user_registration.h"
 
 rdv_title::rdv_title(rdv_view* _view, QWidget* _parent)
 : QGraphicsScene(_parent)
@@ -102,11 +103,13 @@ rdv_title::rdv_title(rdv_view* _view, QWidget* _parent)
     soundManager = new rdv_sound_manager;
     connect(this, &rdv_title::playSound, soundManager, &rdv_sound_manager::playSoundEffect);
     emit playSound("theme");
+
+    loginWindow = new rdv_user_registration;
 }
 
 rdv_title::~rdv_title()
 {
-
+    delete loginWindow;
 }
 
 void rdv_title::login()
@@ -127,10 +130,10 @@ void rdv_title::quitProgram()
 
 void rdv_title::newUser()
 {
-
+    loginWindow->exec();
 }
 
-void rdv_title::on_radioButton_toggled(bool checked)
+void rdv_title::on_radioButton_toggled([[maybe_unused]] bool checked)
 {
 
 }

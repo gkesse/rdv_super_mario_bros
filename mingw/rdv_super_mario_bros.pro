@@ -1,6 +1,6 @@
 TARGET = rdv_super_mario_bros
 TEMPLATE = app
-CONFIG += console
+CONFIG += console debug
 QT += widgets core5compat multimedia sql
 
 DESTDIR = bin
@@ -26,6 +26,8 @@ SOURCES +=\
 	$$PWD/../code/rdv_db_mysql.cpp \
 	$$PWD/../code/rdv_db_mysql_run.cpp \
 	$$PWD/../code/rdv_game_dao.cpp \
+	$$PWD/../code/rdv_user_registration.cpp \
+	$$PWD/../code/rdv_errors.cpp \
 
 HEADERS +=\
 	$$PWD/../code/rdv_application.h \
@@ -40,6 +42,11 @@ HEADERS +=\
 	$$PWD/../code/rdv_db_mysql.h \
 	$$PWD/../code/rdv_db_mysql_run.h \
 	$$PWD/../code/rdv_game_dao.h \
+	$$PWD/../code/rdv_user_registration.h \
+	$$PWD/../code/rdv_errors.h \
+
+FORMS +=\
+	$$PWD/../code/rdv_user_registration.ui \
 
 RESOURCES +=\
 	mario.qrc \
