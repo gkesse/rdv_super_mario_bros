@@ -16,6 +16,8 @@ auto constexpr RDV_SPLASHSCREEN_TIMER			= 200;
 
 // scene
 auto constexpr RDV_SCENE_BACKGROUND_DURATION    = 150000;
+auto constexpr RDV_SCENE_WIDTH                  = 8000;
+auto constexpr RDV_SCENE_HEIGHT                 = 720;
 
 // state
 auto constexpr RDV_MAX_STATE					= 10;

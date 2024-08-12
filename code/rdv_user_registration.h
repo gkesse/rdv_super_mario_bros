@@ -16,10 +16,6 @@ public:
 
 	const rdv_errors& getErrors() const     {return m_errors;}
 
-private:
-	bool isValidEmail(const QString& _username) const;
-	bool isValidPassword(const QString& _password) const;
-
 private slots:
     void on_btnCancel_clicked();
     void on_radPassword_clicked(bool checked);

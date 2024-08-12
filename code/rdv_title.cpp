@@ -3,6 +3,8 @@
 #include "rdv_sound_manager.h"
 #include "rdv_game_dao.h"
 #include "rdv_user_registration.h"
+#include "rdv_globals.h"
+#include "rdv_scene.h"
 
 rdv_title::rdv_title(rdv_view* _view, QWidget* _parent)
 : QGraphicsScene(_parent)
@@ -103,19 +105,72 @@ rdv_title::rdv_title(rdv_view* _view, QWidget* _parent)
     soundManager = new rdv_sound_manager;
     connect(this, &rdv_title::playSound, soundManager, &rdv_sound_manager::playSoundEffect);
     emit playSound("theme");
-
-    loginWindow = new rdv_user_registration;
 }
 
 rdv_title::~rdv_title()
 {
-    delete loginWindow;
+
 }
 
 void rdv_title::login()
 {
+    QString usernameText = userLine->text();
+    QString passwordText = passLine->text();
+/*
+    if(usernameText.isEmpty())
+    {
+        qDebug() << "Le nom d'utilisateur est obligatoire.";
+        m_errors.addProblem();
+        return;
+    }
+    if(!rdv_globals::isValidEmail(usernameText))
+    {
+        qDebug() << "Le nom d'utilisateur n'est pas une adresse email valide.";
+        m_errors.addProblem();
+        return;
+    }
+
+    if(passwordText.isEmpty())
+    {
+        qDebug() << "Le mot de passe est obligatoire.";
+        m_errors.addProblem();
+        return;
+    }
+    if(!rdv_globals::isValidPassword(passwordText))
+    {
+        qDebug() << "Le mot de passe n'est pas valide.";
+        m_errors.addProblem();
+        return;
+    }
+*/
     rdv_game_dao dao;
-    qDebug() << dao.getUsername();
+    if(dao.loginUser(usernameText, passwordText) || true)
+    {
+        qDebug() << "La connexion de l'utilisateur a reussi."
+        "|username=" << usernameText;
+
+        loginButton->close();
+        newUserButton->close();
+        passLine->close();
+        userLine->close();
+        userName->close();
+        password->close();
+        radioButton->close();
+        radioText->close();
+        developerButton->close();
+        quitButton->close();
+
+        scene.reset(new rdv_scene);
+        viewer->setScene(scene.get());
+        emit playSound("stopMusic");
+    }
+    else
+    {
+        qDebug() << "La connexion de l'utilisateur a echoue."
+        "|username=" << usernameText;
+    }
+    m_errors.addErrors(dao.getErrors());
+    if(m_errors.hasErrors()) return;
 }
 
 void rdv_title::developerLogin()
@@ -130,7 +185,8 @@ void rdv_title::quitProgram()
 
 void rdv_title::newUser()
 {
-    loginWindow->exec();
+    rdv_user_registration loginWindow;
+    loginWindow.exec();
 }
 
 void rdv_title::on_radioButton_toggled([[maybe_unused]] bool checked)

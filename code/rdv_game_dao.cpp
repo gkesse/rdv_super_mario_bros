@@ -25,21 +25,37 @@ void rdv_game_dao::registerUser(const QString& _username, const QString& _passwo
         dbSQL.insertQuery(""
                 "insert into _users "
                 "(_username, _password) values "
-                "(:username, SHA1 (:password))"
+                "(:username, SHA1(:password))"
                 "");
         m_errors.addErrors(dbSQL.getErrors());
         if(m_errors.hasErrors()) return;
     }
 }
 
-QString rdv_game_dao::getUsername() const
+bool rdv_game_dao::loginUser(const QString& _username, const QString& _password)
 {
+    QString password = _username + "|" + _password;
+
     rdv_db_mysql dbSQL;
-    rdv_db_mysql_map dataMap = dbSQL.readQuery(""
+    dbSQL.addParam(":username", _username);
+    dbSQL.addParam(":password", password);
+    dbSQL.readQuery(""
             "select _username from _users "
-            ""
+            "where _username = :username "
+            "and _password = SHA1(:password)"
             "");
-    return "";
+    m_errors.addErrors(dbSQL.getErrors());
+    if(m_errors.hasErrors()) return false;
+
+    if(dbSQL.getCountRows() == 1) return true;
+    if(dbSQL.getCountRows() > 1)
+    {
+        qDebug() << "Plusieurs utilisateurs possedent le meme identifiant."
+        "|username=" << _username;
+        m_errors.addProblem();
+        return false;
+    }
+    return false;
 }
 
 bool rdv_game_dao::checkUser(const QString& _username)

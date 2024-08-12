@@ -1,6 +1,7 @@
 #include "rdv_user_registration.h"
 #include "ui_rdv_user_registration.h"
 #include "rdv_game_dao.h"
+#include "rdv_globals.h"
 
 rdv_user_registration::rdv_user_registration(QWidget* _parent)
 : QDialog(_parent)
@@ -12,22 +13,6 @@ rdv_user_registration::rdv_user_registration(QWidget* _parent)
 rdv_user_registration::~rdv_user_registration()
 {
     delete ui;
-}
-
-bool rdv_user_registration::isValidEmail(const QString& _username) const
-{
-
-   QRegularExpression regExp("^([a-z0-9_\\.-]+)@([\\da-z\\.-]+)\\.([a-z\\.]{2,6})$");
-   QRegularExpressionMatch regMatch(regExp.match(_username));
-   return regMatch.hasMatch();
-}
-
-bool rdv_user_registration::isValidPassword(const QString& _password) const
-{
-
-   QRegularExpression regExp("^[a-zA-Z0-9_-]{7,20}$");
-   QRegularExpressionMatch regMatch(regExp.match(_password));
-   return regMatch.hasMatch();
 }
 
 void rdv_user_registration::on_btnCancel_clicked()
@@ -58,7 +43,8 @@ void rdv_user_registration::on_btnSubmit_clicked()
         m_errors.addProblem();
         return;
     }
-    if(!isValidEmail(username))
+
+    if(!rdv_globals::isValidEmail(username))
     {
         qDebug() << "Le nom d'utilisateur n'est pas une adresse email valide.";
         m_errors.addProblem();
@@ -70,7 +56,7 @@ void rdv_user_registration::on_btnSubmit_clicked()
         m_errors.addProblem();
         return;
     }
-    if(!isValidPassword(password))
+    if(!rdv_globals::isValidPassword(password))
     {
         qDebug() << "Le mot de passe n'est pas valide.";
         m_errors.addProblem();

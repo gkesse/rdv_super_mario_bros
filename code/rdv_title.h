@@ -7,6 +7,7 @@ class rdv_pixmap_item;
 class rdv_title;
 class rdv_sound_manager;
 class rdv_user_registration;
+class rdv_scene;
 
 class rdv_pixmap_item : public QObject, public QGraphicsPixmapItem
 {
@@ -21,6 +22,8 @@ class rdv_title : public QGraphicsScene
 public:
 	explicit rdv_title(rdv_view* _view, QWidget* _parent = nullptr);
 	~rdv_title();
+
+	const rdv_errors& getErrors() const     {return m_errors;}
 
 private slots:
      void login();
@@ -53,5 +56,7 @@ private:
 	QLabel *radioText;
 	rdv_sound_manager *soundManager;
 
-    rdv_user_registration *loginWindow;
+    QSharedPointer<rdv_scene> scene;
+
+    rdv_errors m_errors;
 };

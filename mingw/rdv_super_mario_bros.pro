@@ -28,6 +28,10 @@ SOURCES +=\
 	$$PWD/../code/rdv_game_dao.cpp \
 	$$PWD/../code/rdv_user_registration.cpp \
 	$$PWD/../code/rdv_errors.cpp \
+	$$PWD/../code/rdv_globals.cpp \
+	$$PWD/../code/rdv_scene.cpp \
+	$$PWD/../code/rdv_coin.cpp \
+	$$PWD/../code/rdv_question_box.cpp \
 
 HEADERS +=\
 	$$PWD/../code/rdv_application.h \
@@ -44,6 +48,10 @@ HEADERS +=\
 	$$PWD/../code/rdv_game_dao.h \
 	$$PWD/../code/rdv_user_registration.h \
 	$$PWD/../code/rdv_errors.h \
+	$$PWD/../code/rdv_globals.h \
+	$$PWD/../code/rdv_scene.h \
+	$$PWD/../code/rdv_coin.h \
+	$$PWD/../code/rdv_question_box.h \
 
 FORMS +=\
 	$$PWD/../code/rdv_user_registration.ui \

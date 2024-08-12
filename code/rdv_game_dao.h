@@ -8,7 +8,7 @@ public:
 	explicit rdv_game_dao();
 	~rdv_game_dao();
 	void registerUser(const QString& _username, const QString& _password);
-	QString getUsername() const;
+	bool loginUser(const QString& _username, const QString& _password);
 
     const rdv_errors& getErrors() const     {return m_errors;}
 
