@@ -22,6 +22,7 @@ public:
 
 private:
     QString m_hostname;
+    int m_port;
     QString m_username;
     QString m_password;
     QString m_database;

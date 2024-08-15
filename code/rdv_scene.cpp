@@ -1,11 +1,82 @@
 #include "rdv_scene.h"
 #include "rdv_coin.h"
 #include "rdv_question_box.h"
+#include "rdv_mushroom_box.h"
+#include "rdv_flower_box.h"
+#include "rdv_brick_platform.h"
+#include "rdv_wall_platform.h"
+#include "rdv_note_box.h"
+#include "rdv_goomba.h"
+#include "rdv_turtle.h"
+#include "rdv_piranha.h"
+#include "rdv_flag.h"
+#include "rdv_score.h"
+#include "rdv_stretch.h"
+#include "rdv_conveyor.h"
+#include "rdv_giant_goomba.h"
+#include "rdv_warp_tube.h"
+#include "rdv_stair_block.h"
+#include "rdv_bomb.h"
+#include "rdv_red_turtle.h"
+#include "rdv_spiny.h"
+#include "rdv_castle.h"
+#include "rdv_small_mario.h"
+#include "rdv_coin_counter.h"
+#include "rdv_timer.h"
+#include "rdv_player.h"
+#include "rdv_fire_mario.h"
+#include "rdv_sound_manager.h"
+#include "rdv_fire_ball.h"
+#include "rdv_pixmap_painter.h"
+#include "rdv_level_complete_window.h"
+#include "rdv_game_over_window.h"
+#include "rdv_mushroom.h"
+#include "rdv_flower.h"
 
-rdv_scene::rdv_scene(QObject* _parent)
-: QGraphicsScene(_parent)
+rdv_scene::rdv_scene(QScrollBar *_scroll, QObject* _parent)
+: QGraphicsScene    (_parent)
+, f_ireMario        (false)
+, bigMario          (false)
+, littleMario       (true)
+, jumping           (false)
+, falling           (false)
+, m_jumpAnimation   (new QPropertyAnimation(this))
+, m_platform        (nullptr)
+, scroll            (_scroll)
+, m_velocity        (7)
 {
     initPlayField();
+
+    m_timer.setInterval(20);
+    connect(&m_timer, &QTimer::timeout, this, &rdv_scene::movePlayer);
+
+    mFallTimer.setInterval(20);
+    connect(&mFallTimer, &QTimer::timeout, this, &rdv_scene::fallPlayer);
+
+    m_jumpAnimation->setTargetObject(this);
+    m_jumpAnimation->setPropertyName("jumpFactor");
+    m_jumpAnimation->setStartValue(0);
+    m_jumpAnimation->setKeyValueAt(0.5, 1);
+    m_jumpAnimation->setEndValue(0);
+    m_jumpAnimation->setDuration(800);
+    m_jumpAnimation->setEasingCurve(QEasingCurve::OutInQuad);
+
+    connect(this, &rdv_scene::jumpFactorChanged, this, &rdv_scene::jumpPlayer);
+    connect(m_jumpAnimation, &QPropertyAnimation::stateChanged, this, &rdv_scene::jumpStatusChanged);
+
+    f_ireMario = false;
+    bigMario = false;
+    littleMario = true;
+    connect(this, SIGNAL(spawnMushroom()),this,SLOT(controlMushroom()));
+    connect(this, SIGNAL(spawnFlower()),this,SLOT(controlFlower()));
+
+    jumping = false;
+    falling = false;
+    m_smallPlayer->addStandingDirection(1);
+
+    soundManager = new rdv_sound_manager;
+    connect(this, &rdv_scene::playSound, soundManager, &rdv_sound_manager::playSoundEffect);
+    emit playSound("level1");
 }
 
 rdv_scene::~rdv_scene()
@@ -529,6 +600,459 @@ void rdv_scene::initPlayField()
     m_questbox12 = new rdv_question_box(1);
     m_questbox12->setPos(7200, m_groundLevel - m_questbox11->boundingRect().height()-100);
     addItem(m_questbox12);
+
+    mushroomQuestBox = new rdv_mushroom_box(1);
+    mushroomQuestBox->setPos(200, m_groundLevel - mushroomQuestBox->boundingRect().height()-100);
+    mushroomQuestBox->setZValue(1);
+    addItem(mushroomQuestBox);
+
+    flowerQuestBox = new rdv_flower_box(1);
+    flowerQuestBox->setPos(1085, m_groundLevel - flowerQuestBox->boundingRect().height()-250);
+    flowerQuestBox->setZValue(3);
+    addItem(flowerQuestBox);
+
+    //Add brick platforms
+    mBrickPlatform = new rdv_brick_platform(5);
+    mBrickPlatform->setPos(404, m_groundLevel - mBrickPlatform->boundingRect().height()-100);
+    addItem(mBrickPlatform);
+
+    mBrickPlatform2 = new rdv_brick_platform(1);
+    mBrickPlatform2->setPos(648, m_groundLevel - mBrickPlatform2->boundingRect().height()-225);
+    addItem(mBrickPlatform2);
+
+    mBrickPlatform3 = new rdv_brick_platform(1);
+    mBrickPlatform3->setPos(810, m_groundLevel - mBrickPlatform3->boundingRect().height()-270);
+    addItem(mBrickPlatform3);
+
+    mBrickPlatform4 = new rdv_brick_platform(5);
+    mBrickPlatform4->setPos(1000, m_groundLevel - mBrickPlatform4->boundingRect().height()-100);
+    addItem(mBrickPlatform4);
+
+    mBrickPlatform5 = new rdv_brick_platform(5);
+    mBrickPlatform5->setPos(5500, m_groundLevel - mBrickPlatform5->boundingRect().height()-150);
+    addItem(mBrickPlatform5);
+
+    mBrickPlatform6 = new rdv_brick_platform(5);
+    mBrickPlatform6->setPos(5200, m_groundLevel - mBrickPlatform6->boundingRect().height()-200);
+    addItem(mBrickPlatform6);
+
+    mBrickPlatform7 = new rdv_brick_platform(1);
+    mBrickPlatform7->setPos(5900, m_groundLevel - mBrickPlatform7->boundingRect().height()-150);
+    addItem(mBrickPlatform7);
+
+    mBrickPlatform8 = new rdv_brick_platform(7);
+    mBrickPlatform8->setPos(6100, m_groundLevel - mBrickPlatform8->boundingRect().height()-150);
+    addItem(mBrickPlatform8);
+
+    //Add wall platform
+    m_wallPlatform = new rdv_wall_platform(6);
+    m_wallPlatform->setPos(2910, m_groundLevel - m_wallPlatform->boundingRect().height()-240);
+    addItem(m_wallPlatform);
+
+    m_wallPlatform2  = new rdv_wall_platform(8);
+    m_wallPlatform2->setPos(3115, m_groundLevel - m_wallPlatform2->boundingRect().height()-300);
+    addItem(m_wallPlatform2);
+
+    m_wallPlatform3 = new rdv_wall_platform(16);
+    m_wallPlatform3->setPos(3370, m_groundLevel - m_wallPlatform3->boundingRect().height()-103);
+    addItem(m_wallPlatform3);
+
+    m_wallPlatform4 = new rdv_wall_platform(20);
+    m_wallPlatform4->setPos(5000, m_groundLevel );
+    addItem(m_wallPlatform4);
+
+    m_wallPlatform5 = new rdv_wall_platform(10);
+    m_wallPlatform5->setPos(1345, m_groundLevel );
+    addItem(m_wallPlatform5);
+
+    m_wallPlatform6 = new rdv_wall_platform(3);
+    m_wallPlatform6->setPos(404, m_groundLevel );
+    addItem(m_wallPlatform6);
+
+    m_wallPlatform7 = new rdv_wall_platform(3);
+    m_wallPlatform7->setPos(1000, m_groundLevel );
+    addItem(m_wallPlatform7);
+
+    m_wallPlatform8 = new rdv_wall_platform(4);
+    m_wallPlatform8->setPos(3115, m_groundLevel );
+    addItem(m_wallPlatform8);
+
+    m_wallPlatform9 = new rdv_wall_platform(3);
+    m_wallPlatform9->setPos(4960, m_groundLevel );
+    addItem(m_wallPlatform9);
+
+    m_wallPlatform10 = new rdv_wall_platform(3);
+    m_wallPlatform10->setPos(6100, m_groundLevel );
+    addItem(m_wallPlatform10);
+
+    m_wallPlatform11 = new rdv_wall_platform(3);
+    m_wallPlatform11->setPos(2100, m_groundLevel- m_wallPlatform11->boundingRect().height()-150 );
+    addItem(m_wallPlatform11);
+
+    //Add Notebox
+    m_NoteBox = new rdv_note_box(5);
+    m_NoteBox->setPos(2100, m_groundLevel - m_NoteBox->boundingRect().height()-130);
+    addItem(m_NoteBox);
+
+    m_NoteBox2 = new rdv_note_box(1);
+    m_NoteBox2->setPos(3980, m_groundLevel - m_NoteBox2->boundingRect().height()-300);
+    addItem(m_NoteBox2);
+
+    m_NoteBox3 = new rdv_note_box(1);
+    m_NoteBox3->setPos(4230, m_groundLevel - m_NoteBox3->boundingRect().height()-325);
+    addItem(m_NoteBox3);
+
+    m_NoteBox4 = new rdv_note_box(1);
+    m_NoteBox4->setPos(4480, m_groundLevel - m_NoteBox4->boundingRect().height()-340);
+    addItem(m_NoteBox4);
+
+    m_NoteBox5 = new rdv_note_box(1);
+    m_NoteBox5->setPos(4720, m_groundLevel - m_NoteBox5->boundingRect().height()-365);
+    addItem(m_NoteBox5);
+
+    m_NoteBox6 = new rdv_note_box(5);
+    m_NoteBox6->setPos(4940, m_groundLevel - m_NoteBox6->boundingRect().height()-400);
+    addItem(m_NoteBox6);
+
+    //Add Goomba
+    m_goomba = new rdv_goomba(QRectF(m_wallPlatform6 ->pos(), m_wallPlatform6 ->boundingRect().size()), -1);
+    m_goomba->setPos(400, m_groundLevel - m_goomba->boundingRect().height()-150);
+    addItem(m_goomba);
+    connect(this->m_goomba, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+
+    //Add Turtle
+    m_turtle = new rdv_turtle(QRectF(m_wallPlatform7->pos(), m_wallPlatform7->boundingRect().size()), -1);
+    m_turtle->setPos(995, m_groundLevel - m_turtle->boundingRect().height()-150);
+    addItem(m_turtle);
+    connect(this->m_turtle, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+
+    m_turtle2 = new rdv_turtle(QRectF(m_wallPlatform8->pos(), m_wallPlatform8->boundingRect().size()), -1);
+    m_turtle2->setPos(3250, m_groundLevel - m_turtle2->boundingRect().height()-345);
+    addItem(m_turtle2);
+    connect(this->m_turtle2, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+
+    //Add piranha plant
+    m_piranha = new rdv_piranha;
+    m_piranha->setPos(773, m_groundLevel - m_piranha->boundingRect().height()-95);
+    addItem(m_piranha);
+
+    m_piranha2 = new rdv_piranha;
+    m_piranha2->setPos(2975, m_groundLevel - m_piranha2->boundingRect().height()-95);
+    addItem(m_piranha2);
+
+    m_piranha3= new rdv_piranha;
+    m_piranha3->setPos(4850, m_groundLevel - m_piranha2->boundingRect().height()-95);
+    addItem(m_piranha3);
+
+    //Add Flag Animation
+    m_flag2 = new rdv_flag;
+    m_flag2->setPos(7320, m_groundLevel - m_flag2->boundingRect().height()-285);
+    addItem(m_flag2);
+
+    //Add coin counter
+    m_count = new rdv_coin_counter;
+    m_count->setPos(65, m_groundLevel - m_count->boundingRect().height()-602);
+    addItem(m_count);
+
+    //Add Score counter
+    m_score = new rdv_score;
+    m_score->setPos(980, m_groundLevel - m_score->boundingRect().height()-610);
+    addItem(m_score);
+
+    //Add Game Timer
+    m_gameTimer = new rdv_timer;
+    m_gameTimer->setPos(1140, m_groundLevel - m_gameTimer->boundingRect().height()-610);
+    addItem(m_gameTimer);
+
+    //Add stretch
+    m_stretch = new rdv_stretch;
+    m_stretch->setPos(2100, m_groundLevel - m_stretch->boundingRect().height()-20);
+    addItem(m_stretch);
+
+    //Add sign
+    m_sign = new rdv_pixmap_painter(QPixmap(":images/sign.png"));
+    m_sign->setPos(250, m_groundLevel - m_sign->boundingRect().height());
+    addItem(m_sign);
+
+    //Add conveyor
+    m_conveyor = new rdv_conveyor;
+    m_conveyor->setPos(4160, m_groundLevel - m_conveyor->boundingRect().height()-100);
+    addItem(m_conveyor);
+
+    m_conveyor2 = new rdv_conveyor;
+    m_conveyor2->setPos(4370, m_groundLevel - m_conveyor2->boundingRect().height()-100);
+    addItem(m_conveyor2);
+
+    m_conveyor3 = new rdv_conveyor;
+    m_conveyor3->setPos(4580, m_groundLevel - m_conveyor3->boundingRect().height()-100);
+    addItem(m_conveyor3);
+
+    //Add giant goomba
+    m_giantgoomba = new rdv_giant_goomba;
+    m_giantgoomba->setPos(4210, m_groundLevel - m_giantgoomba->boundingRect().height()-150);
+    addItem(m_giantgoomba);
+
+    m_giantgoomba2 = new rdv_giant_goomba;
+    m_giantgoomba2->setPos(4420, m_groundLevel - m_giantgoomba2->boundingRect().height()-150);
+    addItem(m_giantgoomba2);
+
+    m_giantgoomba3 = new rdv_giant_goomba;
+    m_giantgoomba3->setPos(4630, m_groundLevel - m_giantgoomba3->boundingRect().height()-150);
+    addItem(m_giantgoomba3);
+
+    //Add warp tube
+    m_warpTube1 = new rdv_warp_tube();
+    m_warpTube1->setPos(800, m_groundLevel - m_warpTube1->boundingRect().height());
+    addItem(m_warpTube1);
+
+    m_warpTube2 = new rdv_warp_tube();
+    m_warpTube2->setPos(3000, m_groundLevel - m_warpTube2->boundingRect().height());
+    addItem(m_warpTube2);
+
+    m_warpTube3 = new rdv_warp_tube();
+    m_warpTube3->setPos(4880, m_groundLevel - m_warpTube3->boundingRect().height());
+    addItem(m_warpTube3);
+
+    //Add Stair blocks
+    m_stairBlock = new rdv_stair_block(9);
+    m_stairBlock->setPos(6750, m_groundLevel - m_stairBlock->boundingRect().height());
+    addItem(m_stairBlock);
+
+    m_stairBlock2 = new rdv_stair_block(8);
+    m_stairBlock2->setPos(6798, m_groundLevel - m_stairBlock2->boundingRect().height()-48);
+    addItem(m_stairBlock2);
+
+    m_stairBlock3 = new rdv_stair_block(7);
+    m_stairBlock3->setPos(6846, m_groundLevel - m_stairBlock3->boundingRect().height()-96);
+    addItem(m_stairBlock3);
+
+    m_stairBlock4 = new rdv_stair_block(6);
+    m_stairBlock4->setPos(6894, m_groundLevel - m_stairBlock4->boundingRect().height()-144);
+    addItem(m_stairBlock4);
+
+    m_stairBlock5 = new rdv_stair_block(5);
+    m_stairBlock5->setPos(6942, m_groundLevel - m_stairBlock5->boundingRect().height()-192);
+    addItem(m_stairBlock5);
+
+    m_stairBlock6 = new rdv_stair_block(4);
+    m_stairBlock6->setPos(6990, m_groundLevel - m_stairBlock6->boundingRect().height()-240);
+    addItem(m_stairBlock6);
+
+    m_stairBlock7 = new rdv_stair_block(3);
+    m_stairBlock7->setPos(7038, m_groundLevel - m_stairBlock7->boundingRect().height()-288);
+    addItem(m_stairBlock7);
+
+    m_stairBlock8 = new rdv_stair_block(2);
+    m_stairBlock8->setPos(7086, m_groundLevel - m_stairBlock8->boundingRect().height()-336);
+    addItem(m_stairBlock8);
+
+    //Add goomba
+    m_goomba2 = new rdv_goomba(QRectF(m_wallPlatform9->pos(), m_wallPlatform9->boundingRect().size()), -1);
+    m_goomba2->setPos(5100, m_groundLevel - m_goomba2->boundingRect().height()-465);
+    addItem(m_goomba2);
+    connect(this->m_goomba2, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+
+    //Add bomb
+    m_bomb2 = new rdv_bomb(QRectF(m_wallPlatform10->pos(), m_wallPlatform10->boundingRect().size()), -1);
+    m_bomb2->setPos(6100, m_groundLevel - m_bomb2->boundingRect().height()-190);
+    addItem(m_bomb2);
+
+    //Add Red Turtle
+    m_redTurtle = new rdv_red_turtle(QRectF(m_wallPlatform4->pos(), m_wallPlatform4->boundingRect().size()), -1);
+    m_redTurtle->setPos(5100, m_groundLevel - m_redTurtle->boundingRect().height()+4);
+    addItem(m_redTurtle);
+
+    //Add Spiny
+    m_spiny = new rdv_spiny(QRectF(m_wallPlatform5->pos(), m_wallPlatform5->boundingRect().size()), -1);
+    m_spiny->setPos(1345, m_groundLevel - m_spiny->boundingRect().height()+4);
+    addItem(m_spiny);
+
+    //add player
+    m_smallPlayer = new rdv_small_mario;
+    m_smallPlayer->setPos(50, m_groundLevel - m_smallPlayer->boundingRect().height() );
+    addItem(m_smallPlayer);
+
+    //Add half castle to make it look like mario can walk inside of castle
+    h_castle = new rdv_castle;
+    h_castle->setPos(7637, m_groundLevel - h_castle->boundingRect().height());
+    addItem(h_castle);
+}
+
+QGraphicsItem* rdv_scene::collidingPlatforms()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items =  collidingItems(m_player);
+        foreach(QGraphicsItem *item, items)
+        {
+            if(rdv_brick_platform *brickplatform = qgraphicsitem_cast<rdv_brick_platform *>(item))
+            {
+                return brickplatform;
+            }
+            if(rdv_question_box *questbox = qgraphicsitem_cast<rdv_question_box *>(item))
+            {
+                return questbox;
+            }
+            if(rdv_note_box *notebox = qgraphicsitem_cast<rdv_note_box *>(item))
+            {
+                return notebox;
+            }
+            if(rdv_wall_platform *wallplatform = qgraphicsitem_cast<rdv_wall_platform *>(item))
+            {
+                return wallplatform;
+            }
+            if(rdv_stair_block *stairblock = qgraphicsitem_cast<rdv_stair_block *>(item))
+            {
+                return stairblock;
+            }
+            if(rdv_mushroom_box *mushquestbox = qgraphicsitem_cast<rdv_mushroom_box *>(item))
+            {
+                return mushquestbox;
+            }
+            if(rdv_flower_box *flowquestbox = qgraphicsitem_cast<rdv_flower_box *>(item))
+            {
+                return flowquestbox;
+            }
+        }
+        return 0;
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items =  collidingItems(m_smallPlayer);
+        foreach(QGraphicsItem *item, items)
+        {
+            if(rdv_brick_platform *brickplatform = qgraphicsitem_cast<rdv_brick_platform *>(item))
+            {
+                return brickplatform;
+            }
+            if(rdv_question_box *questbox = qgraphicsitem_cast<rdv_question_box *>(item))
+            {
+                return questbox;
+            }
+            if(rdv_note_box *notebox = qgraphicsitem_cast<rdv_note_box *>(item)){
+                return notebox;
+            }
+            if(rdv_wall_platform *wallplatform = qgraphicsitem_cast<rdv_wall_platform *>(item))
+            {
+                return wallplatform;
+            }
+            if(rdv_stair_block *stairblock = qgraphicsitem_cast<rdv_stair_block *>(item))
+            {
+                return stairblock;
+            }
+            if(rdv_mushroom_box *mushquestbox = qgraphicsitem_cast<rdv_mushroom_box *>(item))
+            {
+                return mushquestbox;
+            }
+            if(rdv_flower_box *flowquestbox = qgraphicsitem_cast<rdv_flower_box *>(item))
+            {
+                return flowquestbox;
+            }
+        }
+        return 0;
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items =  collidingItems(fireMario);
+        foreach(QGraphicsItem *item, items)
+        {
+            if(rdv_brick_platform *brickplatform = qgraphicsitem_cast<rdv_brick_platform *>(item))
+            {
+                return brickplatform;
+            }
+            if(rdv_question_box *questbox = qgraphicsitem_cast<rdv_question_box *>(item))
+            {
+                return questbox;
+            }
+            if(rdv_note_box *notebox = qgraphicsitem_cast<rdv_note_box *>(item))
+            {
+                return notebox;
+            }
+            if(rdv_wall_platform *wallplatform = qgraphicsitem_cast<rdv_wall_platform *>(item))
+            {
+                return wallplatform;
+            }
+            if(rdv_stair_block *stairblock = qgraphicsitem_cast<rdv_stair_block *>(item))
+            {
+                return stairblock;
+            }
+            if(rdv_mushroom_box *mushquestbox = qgraphicsitem_cast<rdv_mushroom_box *>(item))
+            {
+                return mushquestbox;
+            }
+            if(rdv_flower_box *flowquestbox = qgraphicsitem_cast<rdv_flower_box *>(item))
+            {
+                return flowquestbox;
+            }
+        }
+        return 0;
+    }
+    return 0;
+}
+
+bool rdv_scene::handleCollisionWithPlatform()
+{
+    if(bigMario)
+    {
+        QGraphicsItem* platform =  collidingPlatforms();
+        if(platform)
+        {
+            QPointF platformPos = platform->pos();
+            if(m_player->isTouchingFoot(platform))
+            {
+                m_player->setPos(m_player->pos().x(), platformPos.y() - m_player->boundingRect().height());
+                m_platform = platform;
+                m_jumpAnimation->stop();
+                return true;
+            }
+        }
+        else
+        {
+            m_platform = 0;
+        }
+        return false;
+    }
+    else if(littleMario)
+    {
+        QGraphicsItem* platform =  collidingPlatforms();
+        if(platform)
+        {
+            QPointF platformPos = platform->pos();
+            if(m_smallPlayer->isTouchingFoot(platform))
+            {
+                m_smallPlayer->setPos(m_smallPlayer->pos().x(), platformPos.y() - m_smallPlayer->boundingRect().height());
+                m_platform = platform;
+                m_jumpAnimation->stop();
+                return true;
+            }
+        }
+        else
+        {
+            m_platform = 0;
+        }
+        return false;
+    }
+    else if(f_ireMario)
+    {
+        QGraphicsItem* platform = collidingPlatforms();
+        if(platform)
+        {
+            QPointF platformPos = platform->pos();
+            if(fireMario->isTouchingFoot(platform))
+            {
+                fireMario->setPos(fireMario->pos().x(), platformPos.y() - fireMario->boundingRect().height());
+                m_platform = platform;
+                m_jumpAnimation->stop();
+                return true;
+            }
+        }
+        else
+        {
+            m_platform = 0;
+        }
+        return false;
+    }
+    return 0;
 }
 
 void rdv_scene::timerEvent([[maybe_unused]] QTimerEvent *event)
@@ -659,13 +1183,1276 @@ void rdv_scene::timerEvent([[maybe_unused]] QTimerEvent *event)
     m_questbox12->nextFrame4();
 }
 
-rdv_pixmap_painter::rdv_pixmap_painter(const QPixmap &pixmap, QGraphicsItem * parent)
-: QGraphicsPixmapItem(pixmap, parent)
+void rdv_scene::setMarioSize(int n)
+{
+    int number = n;
+    if(number == 0)
+    {
+        m_smallPlayer = new rdv_small_mario;
+        m_smallPlayer->setPos(m_player->pos().x(),m_player->pos().y()+28);
+        m_smallPlayer->addDirection(m_player->direction());
+        emit playSound("shrink");
+        addItem(m_smallPlayer);
+        bigMario = false;
+        littleMario = true;
+        f_ireMario = false;
+    }
+    else if(number == 1)
+    {
+        bigMario = false;
+        littleMario = false;
+        f_ireMario = false;
+        emit playSound("stopLevelMusic");
+        emit playSound("mario_death");
+        addItem(gameover);
+        QSharedPointer<rdv_game_over_window> gameOverWindow(new rdv_game_over_window);
+        gameOverWindow->setFixedSize(557,355);
+        gameOverWindow->setWindowFlags(((gameOverWindow->windowFlags()|Qt::CustomizeWindowHint)& ~Qt::WindowCloseButtonHint));
+        gameOverWindow->exec();
+    }
+    else if(number == 2)
+    {
+        emit playSound("powerup");
+        m_player = new rdv_player;
+        m_player->setPos(m_smallPlayer->pos().x(),m_smallPlayer->pos().y()-27);
+        m_player->addDirection(m_smallPlayer->direction());
+        addItem(m_player);
+        bigMario = true;
+        f_ireMario = false;
+        littleMario = false;
+    }
+    else if(number == 3)
+    {
+        emit playSound("powerup");
+        bigMario = true;
+        f_ireMario = false;
+        littleMario = false;
+    }
+    else if(number == 4)
+    {
+        emit playSound("powerup");
+        fireMario = new rdv_fire_mario;
+        fireMario->setPos(m_player->pos().x(),m_player->pos().y());
+        fireMario->addDirection(m_player->direction());
+        addItem(fireMario);
+        f_ireMario = true;
+        bigMario = false;
+        littleMario = false;
+    }
+    else if(number == 5)
+    {
+        emit playSound("powerup");
+        f_ireMario = true;
+        bigMario = false;
+        littleMario = false;
+    }
+    else if(number == 6)
+    {
+        emit playSound("shrink");
+        m_smallPlayer = new rdv_small_mario;
+        m_smallPlayer->setPos(fireMario->pos().x(),fireMario->pos().y()+28);
+        m_smallPlayer->addDirection(fireMario->direction());
+        addItem(m_smallPlayer);
+        bigMario = false;
+        f_ireMario = false;
+        littleMario = true;
+    }
+    else
+    {
+        return;
+    }
+}
+
+void rdv_scene::checkTimer()
+{
+    if(bigMario)
+    {
+        if (0 == m_player->direction())
+        {
+            m_player->stand();
+            m_timer.stop();
+        }
+        else if (!m_timer.isActive())
+        {
+            m_timer.start();
+            m_player->walk();
+        }
+    }
+    else if(littleMario)
+    {
+        if (0 == m_smallPlayer->direction())
+        {
+            m_smallPlayer->stand();
+            m_timer.stop();
+        }
+        else if (!m_timer.isActive())
+        {
+            m_timer.start();
+            m_smallPlayer->walk();
+        }
+    }
+    else if(f_ireMario)
+    {
+        if (0 == fireMario->direction())
+        {
+            fireMario->stand();
+            m_timer.stop();
+        }
+        else if (!m_timer.isActive())
+        {
+            m_timer.start();
+            fireMario->walk();
+        }
+    }
+}
+
+void rdv_scene::movePlayer()
+{
+    checkCollidingCoin();
+    checkCollidingMushroomQuestBox();
+    checkCollidingFlowerQuestBox();
+    checkCollidingQuestBox();
+    checkCollidingStairBlock();
+    checkCollidingFlag();
+    checkCollidingWarpTube();
+
+    if(bigMario)
+    {
+        if(m_player->isFalling())
+        {
+            return;
+        }
+    }
+    else if(littleMario)
+    {
+        if(m_smallPlayer->isFalling())
+        {
+            return;
+        }
+    }
+    else if(f_ireMario)
+    {
+        if(fireMario->isFalling())
+        {
+            return;
+        }
+    }
+
+    if(bigMario)
+    {
+        m_player->nextFrame();
+    }
+    else if(littleMario)
+    {
+        m_smallPlayer->nextFrame();
+    }
+    else if(f_ireMario){
+
+        fireMario->nextFrame();
+    }
+
+    if(bigMario)
+    {
+        int direction = m_player->direction();
+        if (0 == direction)
+            return;
+    }
+    else if(littleMario)
+    {
+        int direction = m_smallPlayer->direction();
+        if (0 == direction)
+            return;
+    }
+    else if(f_ireMario)
+    {
+        int direction = fireMario->direction();
+        if (0 == direction)
+            return;
+    }
+
+    if(bigMario){
+        if(!(m_platform && m_player->isTouchingPlatform(m_platform))&& m_jumpAnimation->state() == QAbstractAnimation::Stopped){
+            if(m_platform)
+            {
+                m_player->fall();
+                mFallTimer.start();
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        if(!(m_platform && m_smallPlayer->isTouchingPlatform(m_platform))&& m_jumpAnimation->state() == QAbstractAnimation::Stopped)
+        {
+            if(m_platform)
+            {
+                m_smallPlayer->fall();
+                mFallTimer.start();
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        if(!(m_platform && fireMario->isTouchingPlatform(m_platform))&& m_jumpAnimation->state() == QAbstractAnimation::Stopped)
+        {
+            if(m_platform){
+                fireMario->fall();
+                mFallTimer.start();
+            }
+        }
+    }
+    else
+    {
+        return;
+    }
+
+    if(bigMario)
+    {
+        int direction = m_player->direction();
+        const int dx = direction * m_velocity;
+
+        if (direction > 0){
+
+            if(m_player->pos().x()==7956){
+                return;
+            }
+
+            m_player->moveBy(dx, 0);
+            int diff = m_player->pos().x() - scroll->value();
+
+            if(diff > 800)
+            {
+                if(scroll->value() > 6720)
+                {
+                    qDebug()<<"6720";
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+
+        if (direction < 0)
+        {
+            if(m_player->pos().x()<0)
+            {
+                return;
+            }
+
+            m_player->moveBy(dx, 0);
+            int diff = m_player->pos().x() - scroll->value();
+
+            if(diff < 600){
+
+                if(m_sky->pos().x() == 0)
+                {
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+    }
+    else if (littleMario)
+    {
+        int direction = m_smallPlayer->direction();
+        const int dx = direction * m_velocity;
+
+        if (direction > 0)
+        {
+            if(m_smallPlayer->pos().x()==7956)
+            {
+                return;
+            }
+
+            m_smallPlayer->moveBy(dx, 0);
+            int diff2 = m_smallPlayer->pos().x() - scroll->value();
+
+            if(diff2 > 800)
+            {
+                if(scroll->value() > 6720)
+                {
+                    qDebug()<<"6720";
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+
+        if (direction < 0)
+        {
+            if(m_smallPlayer->pos().x()<0)
+            {
+                return;
+            }
+
+            m_smallPlayer->moveBy(dx, 0);
+            int diff2 = m_smallPlayer->pos().x() - scroll->value();
+
+            if(diff2 < 600)
+            {
+                if(m_sky->pos().x() == 0)
+                {
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+    }
+
+    else if (f_ireMario)
+    {
+        int direction = fireMario->direction();
+        const int dx = direction * m_velocity;
+        if (direction > 0)
+        {
+            if(fireMario->pos().x()==7956)
+            {
+                return;
+            }
+
+            fireMario->moveBy(dx, 0);
+            int diff2 = fireMario->pos().x() - scroll->value();
+
+            if(diff2 > 800)
+            {
+                if(scroll->value() > 6720)
+                {
+                    qDebug()<<"6720";
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+
+        if (direction < 0)
+        {
+            if(fireMario->pos().x()<0)
+            {
+                return;
+            }
+
+            fireMario->moveBy(dx, 0);
+            int diff2 = fireMario->pos().x() - scroll->value();
+
+            if(diff2 < 600)
+            {
+                if(m_sky->pos().x() == 0)
+                {
+                    return;
+                }
+
+                scroll->setValue(dx + scroll->value());
+                m_sky->setPos(dx + m_sky->pos().x(), 0);
+                m_Scene->setPos(dx + m_Scene->pos().x(), m_Scene->y());
+                m_countLogo->setPos(dx + m_countLogo->pos().x(), m_countLogo->y());
+                m_count->setPos(dx + m_count->pos().x(), m_count->y());
+                m_score->setPos(dx + m_score->pos().x(), m_score->y());
+                m_gameTimer->setPos(dx + m_gameTimer->pos().x(), m_gameTimer->y());
+                m_scoreLogo->setPos(dx + m_scoreLogo->pos().x(), m_scoreLogo->y());
+                m_timerLogo->setPos(dx + m_timerLogo->pos().x(), m_timerLogo->y());
+                gameover->setPos(dx + gameover->pos().x(), gameover->y());
+                courseclear->setPos(dx + courseclear->pos().x(), courseclear->y());
+            }
+        }
+    }
+
+    else
+    {
+        return;
+    }
+}
+
+void rdv_scene::fallPlayer()
+{
+    if(bigMario)
+    {
+        m_player->setPos(m_player->pos().x(), m_player->pos().y() +30);
+        QGraphicsItem* item = collidingPlatforms();
+        if(item && handleCollisionWithPlatform())
+        {
+            mFallTimer.stop();
+            m_player->walk();
+        }
+        else if(m_player->pos().y() + m_player->boundingRect().height() >= m_groundLevel)
+        {
+            m_player->setPos(m_player->pos().x(), m_groundLevel - m_player->boundingRect().height());
+            mFallTimer.stop();
+            m_player->walk();
+            m_platform = 0;
+        }
+    }
+    else if(littleMario)
+    {
+        m_smallPlayer->setPos(m_smallPlayer->pos().x(), m_smallPlayer->pos().y() +30);
+        QGraphicsItem* item = collidingPlatforms();
+        if(item && handleCollisionWithPlatform())
+        {
+            mFallTimer.stop();
+            m_smallPlayer->walk();
+
+        }
+        else if(m_smallPlayer->pos().y() + m_smallPlayer->boundingRect().height() >= m_groundLevel)
+        {
+            m_smallPlayer->setPos(m_smallPlayer->pos().x(), m_groundLevel - m_smallPlayer->boundingRect().height());
+            mFallTimer.stop();
+            m_smallPlayer->walk();
+            m_platform = 0;
+        }
+    }
+    else if(f_ireMario)
+    {
+        fireMario->setPos(fireMario->pos().x(), fireMario->pos().y()+30);
+        QGraphicsItem* item = collidingPlatforms();
+        if(item && handleCollisionWithPlatform())
+        {
+            mFallTimer.stop();
+            fireMario->walk();
+        }
+        else if(fireMario->pos().y() + fireMario->boundingRect().height() >= m_groundLevel)
+        {
+            fireMario->setPos(fireMario->pos().x(), m_groundLevel - fireMario->boundingRect().height());
+            mFallTimer.stop();
+            fireMario->walk();
+            m_platform = 0;
+        }
+    }
+}
+
+void rdv_scene::jumpPlayer()
 {
 
 }
 
-QPainterPath rdv_pixmap_painter::shape() const
+void rdv_scene::jumpStatusChanged(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)
 {
-    return QPainterPath();
+
+}
+
+void rdv_scene::checkCollidingCoin()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items){
+            rdv_coin* c = qgraphicsitem_cast<rdv_coin*>(item);
+            if(c)
+            {
+                removeItem(c);
+                emit playSound("coin");
+                m_count->increase();
+                m_score->increase();
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items){
+            rdv_coin* c = qgraphicsitem_cast<rdv_coin*>(item);
+            if(c)
+            {
+                removeItem(c);
+                emit playSound("coin");
+                m_count->increase();
+                m_score->increase();
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items){
+            rdv_coin* c = qgraphicsitem_cast<rdv_coin*>(item);
+            if(c){
+                removeItem(c);
+                emit playSound("coin");
+                m_count->increase();
+                m_score->increase();
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingMushroomQuestBox()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_mushroom_box* q = qgraphicsitem_cast<rdv_mushroom_box*>(item);
+            if(q)
+            {
+                if(m_player->isTouchingHead(q))
+                {
+                    emit spawnMushroom();
+                    emit playSound("sprout");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_mushroom_box* qp = qgraphicsitem_cast<rdv_mushroom_box*>(item);
+            if(qp){
+                if(m_smallPlayer->isTouchingHead(qp))
+                {
+                    emit spawnMushroom();
+                    emit playSound("sprout");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_mushroom_box* fp = qgraphicsitem_cast<rdv_mushroom_box*>(item);
+            if(fp)
+            {
+                if(fireMario->isTouchingHead(fp))
+                {
+                    //emit spawnMushroom();
+                    emit playSound("coin");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingFlowerQuestBox()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flower_box* f = qgraphicsitem_cast<rdv_flower_box*>(item);
+            if(f)
+            {
+                if(m_player->isTouchingHead(f))
+                {
+                    emit spawnFlower();
+                    emit playSound("fsprout");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flower_box* fp = qgraphicsitem_cast<rdv_flower_box*>(item);
+            if(fp)
+            {
+                if(m_smallPlayer->isTouchingHead(fp))
+                {
+                    //emit spawnFlower();
+                    emit playSound("coin");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flower_box* fp = qgraphicsitem_cast<rdv_flower_box*>(item);
+            if(fp)
+            {
+                if(fireMario->isTouchingHead(fp))
+                {
+                    emit spawnFlower();
+                    emit playSound("fsprout");
+                    m_score->increase();
+                }
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingQuestBox()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_question_box* q = qgraphicsitem_cast<rdv_question_box*>(item);
+            if(q)
+            {
+                if(m_player->isTouchingHead(q))
+                {
+                    emit playSound("coin");
+                    m_count->increase();
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_question_box* qs = qgraphicsitem_cast<rdv_question_box*>(item);
+            if(qs)
+            {
+                if(m_smallPlayer->isTouchingHead(qs))
+                {
+                    emit playSound("coin");
+                    m_count->increase();
+                    m_score->increase();
+                }
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items){
+            rdv_question_box* fs = qgraphicsitem_cast<rdv_question_box*>(item);
+            if(fs)
+            {
+                if(fireMario->isTouchingHead(fs))
+                {
+                    emit playSound("coin");
+                    m_count->increase();
+                    m_score->increase();
+                }
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingStairBlock()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_stair_block* x = qgraphicsitem_cast<rdv_stair_block*>(item);
+            if(x)
+            {
+                if(x->pos().x())
+                {
+                    if(m_player->pos().x() < x->pos().x())
+                        m_player->setPos(x->pos().x()- m_player->boundingRect().width()+5,m_player->pos().y());
+                    if(m_player->pos().x() > x->pos().x())
+                    {
+                        //Bug here. I think mario is touching two different size items. This is causing a set position problem.
+                        m_player->setPos(x->pos().x() + m_player->boundingRect().width()+370,m_player->pos().y());
+                    }
+                }
+
+                if(x->pos().y())
+                {
+                    if(m_player->pos().y() <= x->pos().y())
+                        m_player->setPos(m_player->pos().x(),x->pos().y() - m_player->boundingRect().height());
+                }
+                if(!x->pos().y())
+                {
+                    x=0;
+                }
+                if(m_player->pos().y() < m_groundLevel)
+                {
+                    m_player->fall();
+                    mFallTimer.start();
+                    return;
+                }
+                m_player->setPos(m_player->pos().x(), m_player->pos().y());
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items) {
+            rdv_stair_block* x = qgraphicsitem_cast<rdv_stair_block*>(item);
+            if(x)
+            {
+                if(x->pos().x())
+                {
+                    if(m_smallPlayer->pos().x() < x->pos().x())
+                        m_smallPlayer->setPos(x->pos().x()- m_smallPlayer->boundingRect().width()+5,m_smallPlayer->pos().y());
+                    if(m_smallPlayer->pos().x() > x->pos().x()){
+                        //Bug here. I think mario is touching two different size items. This is causing a set position problem.
+                        m_smallPlayer->setPos(x->pos().x() + m_smallPlayer->boundingRect().width()+370,m_smallPlayer->pos().y());
+                    }
+                }
+
+                if(x->pos().y())
+                {
+                    if(m_smallPlayer->pos().y() <= x->pos().y())
+                        m_smallPlayer->setPos(m_smallPlayer->pos().x(),x->pos().y() - m_smallPlayer->boundingRect().height());
+                }
+                if(!x->pos().y())
+                {
+                    x=0;
+                }
+                if(m_smallPlayer->pos().y() < m_groundLevel)
+                {
+                    m_smallPlayer->fall();
+                    mFallTimer.start();
+                    return;
+                }
+                m_smallPlayer->setPos(m_smallPlayer->pos().x(), m_smallPlayer->pos().y());
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_stair_block* x = qgraphicsitem_cast<rdv_stair_block*>(item);
+            if(x)
+            {
+                if(x->pos().x())
+                {
+                    if(fireMario->pos().x() < x->pos().x())
+                        fireMario->setPos(x->pos().x()- fireMario->boundingRect().width()+5,fireMario->pos().y());
+                    if(fireMario->pos().x() > x->pos().x())
+                    {
+                        //Bug here. I think mario is touching two different size items. This is causing a set position problem.
+                        fireMario->setPos(x->pos().x() + fireMario->boundingRect().width()+370,fireMario->pos().y());
+                    }
+                }
+
+                if(x->pos().y())
+                {
+                    if(fireMario->pos().y() <= x->pos().y())
+                        fireMario->setPos(fireMario->pos().x(),x->pos().y() - fireMario->boundingRect().height());
+                }
+                if(!x->pos().y())
+                {
+                    x=0;
+                }
+                if(fireMario->pos().y() < m_groundLevel)
+                {
+                    fireMario->fall();
+                    mFallTimer.start();
+                    return;
+                }
+                fireMario->setPos(fireMario->pos().x(), fireMario->pos().y());
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingFlag()
+{
+    if(bigMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flag* f = qgraphicsitem_cast<rdv_flag*>(item);
+            if(f)
+            {
+                removeItem(f);
+                addItem(courseclear);
+                emit playSound("stopLevelMusic");
+                emit playSound("levelClear");
+                QSharedPointer<rdv_level_complete_window> levelCompleteWindow(new rdv_level_complete_window);
+                levelCompleteWindow->setFixedSize(557,355);
+                levelCompleteWindow->setWindowFlags(((levelCompleteWindow ->windowFlags() | Qt::CustomizeWindowHint)& ~Qt::WindowCloseButtonHint));
+                levelCompleteWindow->exec();
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flag* f = qgraphicsitem_cast<rdv_flag*>(item);
+            if(f)
+            {
+                removeItem(f);
+                addItem(courseclear);
+                emit playSound("stopLevelMusic");
+                emit playSound("levelClear");
+                QSharedPointer<rdv_level_complete_window> levelCompleteWindow(new rdv_level_complete_window);
+                levelCompleteWindow->setFixedSize(557,355);
+                levelCompleteWindow->setWindowFlags(((levelCompleteWindow ->windowFlags() | Qt::CustomizeWindowHint)& ~Qt::WindowCloseButtonHint));
+                levelCompleteWindow->exec();
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_flag* f = qgraphicsitem_cast<rdv_flag*>(item);
+            if(f)
+            {
+                removeItem(f);
+                addItem(courseclear);
+                emit playSound("stopLevelMusic");
+                emit playSound("levelClear");
+                QSharedPointer<rdv_level_complete_window> levelCompleteWindow(new rdv_level_complete_window);
+                levelCompleteWindow->setFixedSize(557,355);
+                levelCompleteWindow->setWindowFlags(((levelCompleteWindow ->windowFlags() | Qt::CustomizeWindowHint)& ~Qt::WindowCloseButtonHint));
+                levelCompleteWindow->exec();
+            }
+        }
+    }
+}
+
+void rdv_scene::checkCollidingWarpTube()
+{
+    if(bigMario){
+        QList<QGraphicsItem*> items = collidingItems(m_player);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_warp_tube* w = qgraphicsitem_cast<rdv_warp_tube*>(item);
+            if(w)
+            {
+                if(w->pos().x())
+                {
+                    if(m_player->pos().x() < w->pos().x())
+                        m_player->setPos(w->pos().x()- m_player->boundingRect().width(),m_player->pos().y());
+                    if(m_player->pos().x() > w->pos().x())
+                    {
+                        m_player->setPos(w->pos().x() + m_player->boundingRect().width()+25,m_player->pos().y());
+                    }
+                }
+            }
+        }
+    }
+    else if(littleMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(m_smallPlayer);
+        foreach (QGraphicsItem* item, items) {
+
+            rdv_warp_tube* w = qgraphicsitem_cast<rdv_warp_tube*>(item);
+            if(w)
+            {
+                if(w->pos().x())
+                {
+                    if(m_smallPlayer->pos().x() < w->pos().x())
+                        m_smallPlayer->setPos(w->pos().x()- m_smallPlayer->boundingRect().width(),m_smallPlayer->pos().y());
+                    if(m_smallPlayer->pos().x() > w->pos().x())
+                    {
+                        m_smallPlayer->setPos(w->pos().x() + m_smallPlayer->boundingRect().width()+25,m_smallPlayer->pos().y());
+                    }
+                }
+            }
+        }
+    }
+    else if(f_ireMario)
+    {
+        QList<QGraphicsItem*> items = collidingItems(fireMario);
+        foreach (QGraphicsItem* item, items)
+        {
+            rdv_warp_tube* w = qgraphicsitem_cast<rdv_warp_tube*>(item);
+            if(w){
+                if(w->pos().x())
+                {
+                    if(fireMario->pos().x() < w->pos().x())
+                        fireMario->setPos(w->pos().x()- fireMario->boundingRect().width(),fireMario->pos().y());
+                    if(fireMario->pos().x() > w->pos().x())
+                    {
+                        fireMario->setPos(w->pos().x() + fireMario->boundingRect().width()+25,fireMario->pos().y());
+                    }
+                }
+            }
+        }
+    }
+}
+
+void rdv_scene::controlMushroom()
+{
+    if(bigMario)
+    {
+        m_mushroom2 = new rdv_mushroom(QRectF(mushroomQuestBox->pos(), mushroomQuestBox->boundingRect().size()), 1);
+        m_mushroom2->setPos(204, m_groundLevel - m_mushroom2->boundingRect().height()-100);
+        m_mushroom2->setZValue(0);
+        addItem(m_mushroom2);
+        connect(this->m_mushroom2, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+    }
+    else if(littleMario)
+    {
+        m_mushroom2 = new rdv_mushroom(QRectF(mushroomQuestBox->pos(), mushroomQuestBox->boundingRect().size()), 1);
+        m_mushroom2->setPos(204, m_groundLevel - m_mushroom2->boundingRect().height()-100);
+        m_mushroom2->setZValue(0);
+        addItem(m_mushroom2);
+        connect(this->m_mushroom2, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+    }
+    else if(f_ireMario)
+    {
+        m_mushroom2 = new rdv_mushroom(QRectF(mushroomQuestBox->pos(), mushroomQuestBox->boundingRect().size()), 1);
+        m_mushroom2->setPos(204, m_groundLevel - m_mushroom2->boundingRect().height()-100);
+        m_mushroom2->setZValue(0);
+        addItem(m_mushroom2);
+        connect(this->m_mushroom2, SIGNAL(marioSizeStatus(int)),this, SLOT(setMarioSize(int)));
+    }
+    else
+    {
+        return;
+    }
+}
+
+void rdv_scene::controlFlower()
+{
+    if(bigMario)
+    {
+        flower = new rdv_flower(QRectF(flowerQuestBox->pos(), flowerQuestBox->boundingRect().size()), 1);
+        flower->setPos(1090, m_groundLevel - flower->boundingRect().height()-250);
+        flower->setZValue(2);
+        addItem(flower);
+        connect(this->flower, SIGNAL(marioSizeStatusf(int)),this, SLOT(setMarioSize(int)));
+    }
+    else if(f_ireMario)
+    {
+        flower = new rdv_flower(QRectF(flowerQuestBox->pos(), flowerQuestBox->boundingRect().size()), 1);
+        flower->setPos(1090, m_groundLevel - flower->boundingRect().height()-250);
+        flower->setZValue(2);
+        addItem(flower);
+        connect(this->flower, SIGNAL(marioSizeStatusf(int)),this, SLOT(setMarioSize(int)));
+    }
+    else if(littleMario)
+    {
+        return;
+    }
+    else
+    {
+        return;
+    }
+}
+
+void rdv_scene::setJumpFactor(const qreal &jumpFactor)
+{
+    if (m_jumpFactor == jumpFactor)
+        return;
+
+    m_jumpFactor = jumpFactor;
+    emit jumpFactorChanged(m_jumpFactor);
+}
+
+void rdv_scene::keyPressEvent(QKeyEvent *event)
+{
+    if (event->isAutoRepeat())
+        return;
+
+    switch (event->key())
+    {
+    case Qt::Key_Right:
+        if(bigMario)
+        {
+            m_player->addDirection(1);
+            m_player->addStandingDirection(1);
+            checkTimer();
+            break;
+        }
+        else if(littleMario)
+        {
+            m_smallPlayer->addDirection(1);
+            m_smallPlayer->addStandingDirection(1);
+            checkTimer();
+            break;
+        }
+        else if(f_ireMario)
+        {
+            fireMario->addDirection(1);
+            fireMario->addStandingDirection(1);
+            checkTimer();
+            break;
+        }
+        else
+        {
+            break;
+        }
+    case Qt::Key_Left:
+        if(bigMario)
+        {
+            m_player->addDirection(-1);
+            m_player->addStandingDirection(-1);
+            checkTimer();
+            break;
+        }
+        else if(littleMario)
+        {
+            m_smallPlayer->addDirection(-1);
+            m_smallPlayer->addStandingDirection(-1);
+            checkTimer();
+            break;
+        }
+        else if(f_ireMario)
+        {
+            fireMario->addDirection(-1);
+            fireMario->addStandingDirection(-1);
+            checkTimer();
+            break;
+        }
+        else
+        {
+            break;
+        }
+    case Qt::Key_F:
+        if(f_ireMario)
+        {
+            if((fireMario->direction() == 0) && (fireMario->standingDirection() == -1))
+            {
+                fireBall = new rdv_fire_ball(fireMario->standingDirection());
+                fireMario->standShoot();
+                fireBall->setPos(fireMario->pos().x()-30,  fireMario->pos().y()+20);
+                addItem(fireBall);
+                connect(this->fireBall, SIGNAL(increaseTheScore(int)),this, SLOT(scoreIncrease(int)));
+                connect(this->fireBall, SIGNAL(fireballCollision()),this, SLOT(playHitWarp()));
+                connect(this->fireBall, SIGNAL(collideGoomba()),this, SLOT(playHitWarp()));
+                emit playSound("fireball");
+                break;
+            }
+            else if((fireMario->direction() == 0) && (fireMario->standingDirection() != -1))
+            {
+                fireBall = new rdv_fire_ball(1);
+                fireMario->standShoot();
+                fireBall->setPos(fireMario->pos().x()+45,  fireMario->pos().y()+20);
+                addItem(fireBall);
+                connect(this->fireBall, SIGNAL(increaseTheScore(int)),this, SLOT(scoreIncrease(int)));
+                connect(this->fireBall, SIGNAL(fireballCollision()),this, SLOT(playHitWarp()));
+                connect(this->fireBall, SIGNAL(collideGoomba()),this, SLOT(playHitWarp()));
+                emit playSound("fireball");
+                break;
+            }
+            else if((fireMario->direction() == 1) && (fireMario->standingDirection() != -1))
+            {
+                fireBall = new rdv_fire_ball(1);
+                fireMario->walk();
+                fireBall->setPos(fireMario->pos().x()+70, fireMario->pos().y()+17);
+                addItem(fireBall);
+                connect(this->fireBall, SIGNAL(increaseTheScore(int)),this, SLOT(scoreIncrease(int)));
+                connect(this->fireBall, SIGNAL(fireballCollision()),this, SLOT(playHitWarp()));
+                connect(this->fireBall, SIGNAL(collideGoomba()),this, SLOT(playHitWarp()));
+                emit playSound("fireball");
+                break;
+            }
+            else if((fireMario->direction() == -1) && (fireMario->standingDirection() == -1))
+            {
+                fireBall = new rdv_fire_ball(fireMario->standingDirection());
+                fireMario->walk();
+                fireBall->setPos(fireMario->pos().x()-70,  fireMario->pos().y()+35);
+                addItem(fireBall);
+                connect(this->fireBall, SIGNAL(increaseTheScore(int)),this, SLOT(scoreIncrease(int)));
+                connect(this->fireBall, SIGNAL(fireballCollision()),this, SLOT(playHitWarp()));
+                connect(this->fireBall, SIGNAL(collideGoomba()),this, SLOT(playHitWarp()));
+                emit playSound("fireball");
+                break;
+            }
+        }
+        else if(bigMario)
+        {
+            if((m_player->direction() == 0) && (m_player->standingDirection() == -1))
+            {
+                break;
+            }
+            else if((m_player->direction() == 0) && (m_player->standingDirection() != -1))
+            {
+                break;
+            }
+            else if((m_player->direction() == 1) && (m_player->standingDirection() != -1))
+            {
+                break;
+            }
+            else if((m_player->direction() == -1) && (m_player->standingDirection() == -1))
+            {
+                break;
+            }
+        }
+        else if(littleMario)
+        {
+            if((m_smallPlayer->direction() == 0) && (m_smallPlayer->standingDirection() == -1))
+            {
+                break;
+            }
+            else if((m_smallPlayer->direction() == 0) && (m_smallPlayer->standingDirection() != -1))
+            {
+                break;
+            }
+            else if((m_smallPlayer->direction() == 1) && (m_smallPlayer->standingDirection() != -1))
+            {
+                break;
+            }
+            else if((m_smallPlayer->direction() == -1) && (m_smallPlayer->standingDirection() == -1))
+            {
+                break;
+            }
+        }
+        break;
+    case Qt::Key_Space:
+        if(bigMario)
+        {
+            if(mFallTimer.isActive())
+            {
+                return;
+            }
+            else
+            {
+                if (QAbstractAnimation::Stopped == m_jumpAnimation->state())
+                {
+                    m_jumpAnimation->start();
+                    emit playSound("mario_jump");
+                }
+            }
+            break;
+        }
+        else if(littleMario)
+        {
+            if(mFallTimer.isActive())
+            {
+                return;
+            }
+            else{
+                if (QAbstractAnimation::Stopped == m_jumpAnimation->state())
+                {
+                    m_jumpAnimation->start();
+                    emit playSound("mario_jump");
+                }
+            }
+            break;
+        }
+        else if(f_ireMario)
+        {
+            if(mFallTimer.isActive())
+            {
+                return;
+            }
+            else
+            {
+                if (QAbstractAnimation::Stopped == m_jumpAnimation->state())
+                {
+                    m_jumpAnimation->start();
+                    emit playSound("mario_jump");
+                }
+            }
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void rdv_scene::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->isAutoRepeat())
+        return;
+
+    switch (event->key())
+    {
+    case Qt::Key_Right:
+        if(bigMario)
+        {
+            m_player->addDirection(-1);
+            m_player->addStandingDirection(1);
+            checkTimer();
+            break;
+        }
+        else if(littleMario)
+        {
+            m_smallPlayer->addDirection(-1);
+            checkTimer();
+            break;
+        }
+        else if(f_ireMario)
+        {
+            fireMario->addDirection(-1);
+            fireMario->addStandingDirection(1);
+            checkTimer();
+            break;
+        }
+        break;
+    case Qt::Key_Left:
+        if(bigMario)
+        {
+            m_player->addDirection(1);
+            m_player->addStandingDirection(-1);
+            checkTimer();
+            break;
+        }
+        else if(littleMario)
+        {
+            m_smallPlayer->addDirection(1);
+            checkTimer();
+            break;
+        }
+        else if(f_ireMario)
+        {
+            fireMario->addDirection(1);
+            fireMario->addStandingDirection(-1);
+            checkTimer();
+            break;
+        }
+        break;
+    default:
+        break;
+    }
 }

@@ -12,7 +12,6 @@ rdv_title::rdv_title(rdv_view* _view, QWidget* _parent)
 {
     viewer->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 
-    scroll = new QScrollBar;
     scroll = viewer->horizontalScrollBar();
 
     background = new rdv_pixmap_item;
@@ -160,7 +159,7 @@ void rdv_title::login()
         developerButton->close();
         quitButton->close();
 
-        scene.reset(new rdv_scene);
+        scene.reset(new rdv_scene(scroll));
         viewer->setScene(scene.get());
         emit playSound("stopMusic");
     }

@@ -5,6 +5,7 @@ auto constexpr RDV_APPLICATION_TITLE            = "ReadySMB - Super Mario Bro";
 
 // mysql
 auto constexpr RDV_MYSQL_HOSTNAME               = "127.0.0.1";
+auto constexpr RDV_MYSQL_PORT                   = 3306;
 auto constexpr RDV_MYSQL_USERNAME               = "root";
 auto constexpr RDV_MYSQL_PASSWORD               = "";
 auto constexpr RDV_MYSQL_DATABASE               = "db_super_mario_bros";

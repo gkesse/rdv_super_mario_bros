@@ -28,3 +28,5 @@
 #include <QSqlRecord>
 #include <QVector>
 #include <QRegularExpression>
+#include <QFontDatabase>
+#include <QKeyEvent>

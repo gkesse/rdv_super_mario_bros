@@ -3,6 +3,7 @@
 
 rdv_db_mysql::rdv_db_mysql()
 : m_hostname        (RDV_MYSQL_HOSTNAME)
+, m_port            (RDV_MYSQL_PORT)
 , m_username        (RDV_MYSQL_USERNAME)
 , m_password        (RDV_MYSQL_PASSWORD)
 , m_database        (RDV_MYSQL_DATABASE)
@@ -27,9 +28,10 @@ rdv_db_mysql_map rdv_db_mysql::readQuery(const QString& _sqlQuery)
 {
     QSqlDatabase dbSQL = QSqlDatabase::addDatabase("QMYSQL", RDV_MYSQL_CONNECTION_NAME);
     dbSQL.setHostName(m_hostname);
-    dbSQL.setDatabaseName(m_database);
+    dbSQL.setPort(m_port);
     dbSQL.setUserName(m_username);
     dbSQL.setPassword(m_password);
+    dbSQL.setDatabaseName(m_database);
 
     if(!dbSQL.open()) {
         qDebug() << "La connexion au serveur de donnees a echoue."
@@ -48,9 +50,10 @@ void rdv_db_mysql::execQuery(const QString& _sqlQuery)
 {
     QSqlDatabase dbSQL = QSqlDatabase::addDatabase("QMYSQL", RDV_MYSQL_CONNECTION_NAME);
     dbSQL.setHostName(m_hostname);
-    dbSQL.setDatabaseName(m_database);
+    dbSQL.setPort(m_port);
     dbSQL.setUserName(m_username);
     dbSQL.setPassword(m_password);
+    dbSQL.setDatabaseName(m_database);
 
     if(!dbSQL.open()) {
         qDebug() << "La connexion au serveur de donnees a echoue."
@@ -67,9 +70,10 @@ void rdv_db_mysql::insertQuery(const QString& _sqlQuery)
 {
     QSqlDatabase dbSQL = QSqlDatabase::addDatabase("QMYSQL", RDV_MYSQL_CONNECTION_NAME);
     dbSQL.setHostName(m_hostname);
-    dbSQL.setDatabaseName(m_database);
+    dbSQL.setPort(m_port);
     dbSQL.setUserName(m_username);
     dbSQL.setPassword(m_password);
+    dbSQL.setDatabaseName(m_database);
 
     if(!dbSQL.open()) {
         qDebug() << "La connexion au serveur de donnees a echoue."

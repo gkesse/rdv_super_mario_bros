@@ -32,6 +32,36 @@ SOURCES +=\
 	$$PWD/../code/rdv_scene.cpp \
 	$$PWD/../code/rdv_coin.cpp \
 	$$PWD/../code/rdv_question_box.cpp \
+	$$PWD/../code/rdv_mushroom_box.cpp \
+	$$PWD/../code/rdv_flower_box.cpp \
+	$$PWD/../code/rdv_brick_platform.cpp \
+	$$PWD/../code/rdv_wall_platform.cpp \
+	$$PWD/../code/rdv_note_box.cpp \
+	$$PWD/../code/rdv_player.cpp \
+	$$PWD/../code/rdv_small_mario.cpp \
+	$$PWD/../code/rdv_fire_mario.cpp \
+	$$PWD/../code/rdv_goomba.cpp \
+	$$PWD/../code/rdv_turtle.cpp \
+	$$PWD/../code/rdv_piranha.cpp \
+	$$PWD/../code/rdv_flag.cpp \
+	$$PWD/../code/rdv_coin_counter.cpp \
+	$$PWD/../code/rdv_score.cpp \
+	$$PWD/../code/rdv_timer.cpp \
+	$$PWD/../code/rdv_stretch.cpp \
+	$$PWD/../code/rdv_conveyor.cpp \
+	$$PWD/../code/rdv_giant_goomba.cpp \
+	$$PWD/../code/rdv_warp_tube.cpp \
+	$$PWD/../code/rdv_stair_block.cpp \
+	$$PWD/../code/rdv_bomb.cpp \
+	$$PWD/../code/rdv_red_turtle.cpp \
+	$$PWD/../code/rdv_spiny.cpp \
+	$$PWD/../code/rdv_castle.cpp \
+	$$PWD/../code/rdv_pixmap_painter.cpp \
+	$$PWD/../code/rdv_fire_ball.cpp \
+	$$PWD/../code/rdv_level_complete_window.cpp \
+	$$PWD/../code/rdv_game_over_window.cpp \
+	$$PWD/../code/rdv_mushroom.cpp \
+	$$PWD/../code/rdv_flower.cpp \
 
 HEADERS +=\
 	$$PWD/../code/rdv_application.h \
@@ -52,6 +82,36 @@ HEADERS +=\
 	$$PWD/../code/rdv_scene.h \
 	$$PWD/../code/rdv_coin.h \
 	$$PWD/../code/rdv_question_box.h \
+	$$PWD/../code/rdv_mushroom_box.h \
+	$$PWD/../code/rdv_flower_box.h \
+	$$PWD/../code/rdv_brick_platform.h \
+	$$PWD/../code/rdv_wall_platform.h \
+	$$PWD/../code/rdv_note_box.h \
+	$$PWD/../code/rdv_player.h \
+	$$PWD/../code/rdv_small_mario.h \
+	$$PWD/../code/rdv_fire_mario.h \
+	$$PWD/../code/rdv_goomba.h \
+	$$PWD/../code/rdv_turtle.h \
+	$$PWD/../code/rdv_piranha.h \
+	$$PWD/../code/rdv_flag.h \
+	$$PWD/../code/rdv_coin_counter.h \
+	$$PWD/../code/rdv_score.h \
+	$$PWD/../code/rdv_timer.h \
+	$$PWD/../code/rdv_stretch.h \
+	$$PWD/../code/rdv_conveyor.h \
+	$$PWD/../code/rdv_giant_goomba.h \
+	$$PWD/../code/rdv_warp_tube.h \
+	$$PWD/../code/rdv_stair_block.h \
+	$$PWD/../code/rdv_bomb.h \
+	$$PWD/../code/rdv_red_turtle.h \
+	$$PWD/../code/rdv_spiny.h \
+	$$PWD/../code/rdv_castle.h \
+	$$PWD/../code/rdv_pixmap_painter.h \
+	$$PWD/../code/rdv_fire_ball.h \
+	$$PWD/../code/rdv_level_complete_window.h \
+	$$PWD/../code/rdv_game_over_window.h \
+	$$PWD/../code/rdv_mushroom.h \
+	$$PWD/../code/rdv_flower.h \
 
 FORMS +=\
 	$$PWD/../code/rdv_user_registration.ui \

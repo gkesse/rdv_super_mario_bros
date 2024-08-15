@@ -5,29 +5,80 @@
 class rdv_pixmap_painter;
 class rdv_coin;
 class rdv_question_box;
-
-class rdv_pixmap_painter : public QGraphicsPixmapItem
-{
-public:
-    explicit rdv_pixmap_painter(const QPixmap &pixmap, QGraphicsItem *parent = 0);
-
-public:
-    virtual QPainterPath shape() const;
-};
+class rdv_mushroom_box;
+class rdv_flower_box;
+class rdv_brick_platform;
+class rdv_wall_platform;
+class rdv_note_box;
+class rdv_goomba;
+class rdv_turtle;
+class rdv_piranha;
+class rdv_flag;
+class rdv_score;
+class rdv_stretch;
+class rdv_conveyor;
+class rdv_giant_goomba;
+class rdv_warp_tube;
+class rdv_stair_block;
+class rdv_bomb;
+class rdv_red_turtle;
+class rdv_spiny;
+class rdv_small_mario;
+class rdv_coin_counter;
+class rdv_timer;
+class rdv_castle;
+class rdv_player;
+class rdv_fire_mario;
+class rdv_sound_manager;
+class rdv_fire_ball;
+class rdv_mushroom;
+class rdv_flower;
 
 class rdv_scene : public QGraphicsScene
 {
 	Q_OBJECT
+    Q_PROPERTY(qreal jumpFactor READ jumpFactor WRITE setJumpFactor NOTIFY jumpFactorChanged)
 
 public:
-	explicit rdv_scene(QObject* _parent = nullptr);
+	explicit rdv_scene(QScrollBar *_scroll, QObject* _parent = nullptr);
 	~rdv_scene();
 	void timerEvent([[maybe_unused]] QTimerEvent *event);
+    void setJumpFactor(const qreal &jumpFactor);
 
+    qreal jumpFactor() const                {return m_jumpFactor;}
 	const rdv_errors& getErrors() const     {return m_errors;}
+
+protected:
+    void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
 
 private:
 	void initPlayField();
+    QGraphicsItem* collidingPlatforms();
+    bool handleCollisionWithPlatform();
+
+private slots:
+	void setMarioSize(int);
+	void checkTimer();
+	void movePlayer();
+	void fallPlayer();
+	void jumpPlayer();
+    void jumpStatusChanged(QAbstractAnimation::State newState, QAbstractAnimation::State oldState);
+    void checkCollidingCoin();
+    void checkCollidingMushroomQuestBox();
+    void checkCollidingFlowerQuestBox();
+    void checkCollidingQuestBox();
+    void checkCollidingStairBlock();
+    void checkCollidingFlag();
+    void checkCollidingWarpTube();
+    void controlMushroom();
+    void controlFlower();
+
+signals:
+    void playSound(QString);
+    void jumpFactorChanged(qreal);
+    void spawnMushroom();
+    void spawnFlower();
 
 private:
     qreal m_groundLevel;
@@ -173,6 +224,105 @@ private:
     rdv_question_box *m_questbox11;
 
     rdv_question_box *m_questbox12;
+
+    rdv_mushroom_box *mushroomQuestBox;
+    rdv_flower_box *flowerQuestBox;
+
+    rdv_brick_platform *mBrickPlatform;
+    rdv_brick_platform *mBrickPlatform2;
+    rdv_brick_platform *mBrickPlatform3;
+    rdv_brick_platform *mBrickPlatform4;
+    rdv_brick_platform *mBrickPlatform5;
+    rdv_brick_platform *mBrickPlatform6;
+    rdv_brick_platform *mBrickPlatform7;
+    rdv_brick_platform *mBrickPlatform8;
+
+    rdv_wall_platform *m_wallPlatform;
+    rdv_wall_platform *m_wallPlatform2;
+    rdv_wall_platform *m_wallPlatform3;
+    rdv_wall_platform *m_wallPlatform4;
+    rdv_wall_platform *m_wallPlatform5;
+    rdv_wall_platform *m_wallPlatform6;
+    rdv_wall_platform *m_wallPlatform7;
+    rdv_wall_platform *m_wallPlatform8;
+    rdv_wall_platform *m_wallPlatform9;
+    rdv_wall_platform *m_wallPlatform10;
+    rdv_wall_platform *m_wallPlatform11;
+
+    rdv_note_box *m_NoteBox;
+    rdv_note_box *m_NoteBox2;
+    rdv_note_box *m_NoteBox3;
+    rdv_note_box *m_NoteBox4;
+    rdv_note_box *m_NoteBox5;
+    rdv_note_box *m_NoteBox6;
+
+    rdv_goomba *m_goomba;
+
+    rdv_turtle *m_turtle;
+    rdv_turtle *m_turtle2;
+
+    rdv_piranha *m_piranha;
+    rdv_piranha *m_piranha2;
+    rdv_piranha *m_piranha3;
+
+    rdv_flag *m_flag2;
+
+    rdv_coin_counter *m_count;
+    rdv_score *m_score;
+    rdv_timer *m_gameTimer;
+    rdv_stretch *m_stretch;
+
+    rdv_pixmap_painter *m_sign;
+
+    rdv_conveyor *m_conveyor;
+    rdv_conveyor *m_conveyor2;
+    rdv_conveyor *m_conveyor3;
+
+    rdv_giant_goomba *m_giantgoomba;
+    rdv_giant_goomba *m_giantgoomba2;
+    rdv_giant_goomba *m_giantgoomba3;
+
+    rdv_warp_tube *m_warpTube1;
+    rdv_warp_tube *m_warpTube2;
+    rdv_warp_tube *m_warpTube3;
+
+    rdv_stair_block *m_stairBlock;
+    rdv_stair_block *m_stairBlock2;
+    rdv_stair_block *m_stairBlock3;
+    rdv_stair_block *m_stairBlock4;
+    rdv_stair_block *m_stairBlock5;
+    rdv_stair_block *m_stairBlock6;
+    rdv_stair_block *m_stairBlock7;
+    rdv_stair_block *m_stairBlock8;
+
+    rdv_goomba *m_goomba2;
+    rdv_bomb *m_bomb2;
+    rdv_red_turtle *m_redTurtle;
+    rdv_spiny *m_spiny;
+    rdv_small_mario *m_smallPlayer;
+    rdv_castle *h_castle;
+
+    rdv_player *m_player;
+    rdv_fire_mario *fireMario;
+    rdv_fire_ball *fireBall;
+
+    bool f_ireMario;
+    bool bigMario;
+    bool littleMario;
+    bool falling;
+    bool jumping;
+
+    QTimer m_timer;
+    QTimer mFallTimer;
+    QPropertyAnimation *m_jumpAnimation;
+    rdv_sound_manager *soundManager;
+
+    QGraphicsItem *m_platform;
+    QScrollBar *scroll;
+    int m_velocity;
+    qreal m_jumpFactor;
+    rdv_mushroom *m_mushroom2;
+    rdv_flower* flower;
 
     rdv_errors m_errors;
 };
